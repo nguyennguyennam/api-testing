@@ -29,7 +29,7 @@ jobs:
         run: newman run postman_collection.json -d dataset_put.csv -r cli,htmlextra --reporter-htmlextra-export reports/update.html
 
       - name: Run Postman tests - List
-        run: newman run postman_collection.json -d dataset_list.csv -r cli,htmlextra --reporter-htmlextra-export reports/list.html
+        run: newman run postman_collection.json -d page_data.csv -r cli,htmlextra --reporter-htmlextra-export reports/list.html
 
       - name: Upload Newman Reports
         uses: actions/upload-artifact@v4

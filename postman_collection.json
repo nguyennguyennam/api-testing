@@ -25,13 +25,8 @@
         ],
         "url": {
           "raw": "{{baseUrl}}/products/search?q={{query}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "products",
-            "search"
-          ],
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "search"],
           "query": [
             {
               "key": "q",
@@ -79,13 +74,8 @@
         ],
         "url": {
           "raw": "{{baseUrl}}/products/{{productId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "products",
-            "{{productId}}"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "{{productId}}"]
         },
         "body": {
           "mode": "raw",
@@ -127,9 +117,9 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Status 200', () => pm.response.to.have.status(200));",
-              "let data; try { data = pm.response.json(); } catch (e) {}",
-              "pm.test('JSON body', () => pm.expect(data).to.exist);",
-              "const items = Array.isArray(data) ? data : (data.items || data.data || []);",
+              "let body; try { body = pm.response.json(); } catch (e) {}",
+              "pm.test('JSON body', () => pm.expect(body).to.exist);",
+              "const items = Array.isArray(body) ? body : (body.items || body.data || []);",
               "pm.test('Items not empty', () => pm.expect(items.length).to.be.above(0));",
               "const id = pm.iterationData.get('expectId');",
               "const name = (pm.iterationData.get('expectName') || '').toLowerCase();",
@@ -158,9 +148,10 @@
             "exec": [
               "const page = pm.iterationData.get('page');",
               "if (!page) {",
-              "  const u = pm.request.url;",
-              "  const idx = u.query.findIndex(q => q.key === 'page');",
-              "  if (idx > -1) u.query.remove(idx);",
+              "  let q = pm.request.url.query.toObject();",
+              "  delete q.page;",
+              "  pm.request.url.query.clear();",
+              "  Object.keys(q).forEach(k => pm.request.url.query.add({key:k, value:q[k]}));",
               "}"
             ]
           }
@@ -175,13 +166,9 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/products/page?q={{query}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "products"
-          ],
+          "raw": "{{baseUrl}}/products?page={{page}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["products"],
           "query": [
             {
               "key": "page",
