@@ -3,7 +3,7 @@
     "_postman_id": "0cd6cc0f-0000-0000-0000-abcdefabcdef",
     "name": "Products – 3 APIs (GET list only in CI)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Contains three endpoints; CI runs only GET /products with two datasets."
+    "description": "Contains three endpoints; CI runs GET /products and validates PUT with real logic."
   },
   "variable": [
     {
@@ -18,21 +18,13 @@
       "request": {
         "method": "GET",
         "header": [
-          {
-            "key": "Accept",
-            "value": "application/json"
-          }
+          { "key": "Accept", "value": "application/json" }
         ],
         "url": {
           "raw": "{{baseUrl}}/products/search?q={{query}}",
           "host": ["{{baseUrl}}"],
           "path": ["products", "search"],
-          "query": [
-            {
-              "key": "q",
-              "value": "{{query}}"
-            }
-          ]
+          "query": [{ "key": "q", "value": "{{query}}" }]
         },
         "description": "Data-driven via dataset_search.csv (query=Gloves)."
       },
@@ -63,14 +55,8 @@
       "request": {
         "method": "PUT",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Accept",
-            "value": "application/json"
-          }
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
         ],
         "url": {
           "raw": "{{baseUrl}}/products/{{productId}}",
@@ -81,7 +67,7 @@
           "mode": "raw",
           "raw": "{\n  \"name\": \"{{name}}\",\n  \"description\": \"{{description}}\",\n  \"stock\": {{stock}},\n  \"price\": {{price}}\n}"
         },
-        "description": "Data-driven via dataset_put.csv; matches provided schema."
+        "description": "Data-driven via dataset_put.csv (without expectedStatus)."
       },
       "event": [
         {
@@ -90,18 +76,35 @@
             "type": "text/javascript",
             "exec": [
               "const status = pm.response.code;",
-              "const expected = Number(pm.iterationData.get('expectedStatus') || 200);",
-              "pm.test('Status matches expected', () => pm.expect(status).to.eql(expected));",
-              "if (status === 200) {",
-              "  let b; try { b = pm.response.json(); } catch (e) {}",
-              "  pm.test('Body JSON exists (200)', () => pm.expect(b).to.exist);",
-              "  if (b) {",
-              "    pm.test('Name updated', () => pm.expect(String(b.name)).to.eql(String(pm.iterationData.get('name'))));",
-              "    pm.test('Description updated', () => pm.expect(String(b.description)).to.eql(String(pm.iterationData.get('description'))));",
-              "    pm.test('Stock updated', () => pm.expect(Number(b.stock)).to.eql(Number(pm.iterationData.get('stock'))));",
-              "    pm.test('Price updated', () => pm.expect(Number(b.price)).to.eql(Number(pm.iterationData.get('price'))));",
+              "",
+              "// Lấy dữ liệu từ dataset",
+              "const price = Number(pm.iterationData.get('price'));",
+              "const stock = Number(pm.iterationData.get('stock'));",
+              "const name = String(pm.iterationData.get('name') || '');",
+              "const description = String(pm.iterationData.get('description') || '');",
+              "",
+              "// Điều kiện hợp lệ",
+              "const isValid = price >= 0 && stock >= 0 && name.trim().length > 0 && description.trim().length > 0;",
+              "",
+              "// Nếu hợp lệ → phải trả 200",
+              "if (isValid) {",
+              "  pm.test('Valid data → must return 200', () => { pm.expect(status).to.eql(200); });",
+              "",
+              "  if (status === 200) {",
+              "    let b; try { b = pm.response.json(); } catch (e) {}",
+              "    pm.test('Body JSON exists (200)', () => pm.expect(b).to.exist);",
+              "    if (b) {",
+              "      pm.test('Name updated', () => pm.expect(String(b.name)).to.eql(name));",
+              "      pm.test('Description updated', () => pm.expect(String(b.description)).to.eql(description));",
+              "      pm.test('Stock updated', () => pm.expect(Number(b.stock)).to.eql(stock));",
+              "      pm.test('Price updated', () => pm.expect(Number(b.price)).to.eql(price));",
+              "    }",
               "  }",
+              "} else {",
+              "  // Nếu không hợp lệ → không được trả 200",
+              "  pm.test('Invalid data → must NOT return 200', () => { pm.expect(status).not.eql(200); });",
               "}",
+              "",
               "pm.test('Response time <2s', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
             ]
           }
@@ -110,6 +113,18 @@
     },
     {
       "name": "Products – List (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products?page={{page}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["products"],
+          "query": [{ "key": "page", "value": "{{page}}" }]
+        }
+      },
       "event": [
         {
           "listen": "test",
@@ -156,27 +171,7 @@
             ]
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Accept",
-            "value": "application/json"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/products?page={{page}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["products"],
-          "query": [
-            {
-              "key": "page",
-              "value": "{{page}}"
-            }
-          ]
-        }
-      }
+      ]
     }
   ]
 }
