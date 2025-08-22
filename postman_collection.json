@@ -1,0 +1,195 @@
+{
+  "info": {
+    "_postman_id": "0cd6cc0f-0000-0000-0000-abcdefabcdef",
+    "name": "Products – 3 APIs (GET list only in CI)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Contains three endpoints; CI runs only GET /products with two datasets."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8091",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Products – Search (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products/search?q={{query}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "{{query}}"
+            }
+          ]
+        },
+        "description": "Data-driven via dataset_search.csv (query=Gloves)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "let body; try { body = pm.response.json(); } catch (e) {}",
+              "pm.test('JSON body', () => pm.expect(body).to.exist);",
+              "const items = Array.isArray(body) ? body : (body.items || body.data || []);",
+              "pm.test('Items not empty', () => pm.expect(items.length).to.be.above(0));",
+              "const q = (pm.iterationData.get('query') || '').toLowerCase();",
+              "pm.test('Name contains query', () => {",
+              "  const ok = items.some(it => String(it.name || '').toLowerCase().includes(q));",
+              "  pm.expect(ok,'no item matches query').to.be.true;",
+              "});",
+              "pm.test('Response time <2s', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products – Update (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{productId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{name}}\",\n  \"description\": \"{{description}}\",\n  \"stock\": {{stock}},\n  \"price\": {{price}}\n}"
+        },
+        "description": "Data-driven via dataset_put.csv; matches provided schema."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const status = pm.response.code;",
+              "const expected = Number(pm.iterationData.get('expectedStatus') || 200);",
+              "pm.test('Status matches expected', () => pm.expect(status).to.eql(expected));",
+              "if (status === 200) {",
+              "  let b; try { b = pm.response.json(); } catch (e) {}",
+              "  pm.test('Body JSON exists (200)', () => pm.expect(b).to.exist);",
+              "  if (b) {",
+              "    pm.test('Name updated', () => pm.expect(String(b.name)).to.eql(String(pm.iterationData.get('name'))));",
+              "    pm.test('Description updated', () => pm.expect(String(b.description)).to.eql(String(pm.iterationData.get('description'))));",
+              "    pm.test('Stock updated', () => pm.expect(Number(b.stock)).to.eql(Number(pm.iterationData.get('stock'))));",
+              "    pm.test('Price updated', () => pm.expect(Number(b.price)).to.eql(Number(pm.iterationData.get('price'))));",
+              "  }",
+              "}",
+              "pm.test('Response time <2s', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products – List (GET)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "let data; try { data = pm.response.json(); } catch (e) {}",
+              "pm.test('JSON body', () => pm.expect(data).to.exist);",
+              "const items = Array.isArray(data) ? data : (data.items || data.data || []);",
+              "pm.test('Items not empty', () => pm.expect(items.length).to.be.above(0));",
+              "const id = pm.iterationData.get('expectId');",
+              "const name = (pm.iterationData.get('expectName') || '').toLowerCase();",
+              "const desc = (pm.iterationData.get('expectDescription') || '').toLowerCase();",
+              "const price = pm.iterationData.get('expectPrice');",
+              "const stock = pm.iterationData.get('expectStock');",
+              "let found = items.find(it => {",
+              "  const idOk = id ? Number(it.id) === Number(id) : true;",
+              "  const nameOk = name ? String(it.name || '').toLowerCase().includes(name) : true;",
+              "  return idOk && nameOk;",
+              "});",
+              "pm.test('Contains expected product by id/name', () => pm.expect(!!found,'not found').to.be.true);",
+              "if (found) {",
+              "  if (desc) pm.test('Description contains expected', () => pm.expect(String(found.description||'').toLowerCase()).to.include(desc));",
+              "  if (price !== '' && price !== undefined) pm.test('Price matches', () => pm.expect(Number(found.price)).to.eql(Number(price)));",
+              "  if (stock !== '' && stock !== undefined) pm.test('Stock matches', () => pm.expect(Number(found.stock)).to.eql(Number(stock)));",
+              "}",
+              "pm.test('Response time <2s', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+            ]
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const page = pm.iterationData.get('page');",
+              "if (!page) {",
+              "  const u = pm.request.url;",
+              "  const idx = u.query.findIndex(q => q.key === 'page');",
+              "  if (idx > -1) u.query.remove(idx);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products/page?q={{query}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "{{page}}"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
