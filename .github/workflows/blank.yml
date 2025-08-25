@@ -23,15 +23,19 @@ jobs:
         run: npm install -g newman newman-reporter-htmlextra
 
       - name: Run Postman tests - Search
-        run: newman run postman_collection.json -d dataset_search.csv -r cli,htmlextra --reporter-htmlextra-export reports/search.html
+        run: newman run postman_collection.json -d dataset_search.csv \
+              -r cli,htmlextra --reporter-htmlextra-export reports/search.html
         continue-on-error: true
 
       - name: Run Postman tests - Update
-        run: newman run postman_collection.json -d dataset_put.csv -r cli,htmlextra --reporter-htmlextra-export reports/update.html
+        run: newman run postman_collection.json -d dataset_put.csv \
+              --env-var JWT_TOKEN=${{ secrets.JWT_TOKEN }} \
+              -r cli,htmlextra --reporter-htmlextra-export reports/update.html
         continue-on-error: true
 
       - name: Run Postman tests - List
-        run: newman run postman_collection.json -d page_data.csv -r cli,htmlextra --reporter-htmlextra-export reports/list.html
+        run: newman run postman_collection.json -d page_data.csv \
+              -r cli,htmlextra --reporter-htmlextra-export reports/list.html
         continue-on-error: true
 
       - name: Upload Newman Reports

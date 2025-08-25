@@ -10,6 +10,10 @@
       "key": "baseUrl",
       "value": "https://api-with-bugs.practicesoftwaretesting.com",
       "type": "string"
+    }, {
+      "key": "JWT_TOKEN",
+      "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FwaS13aXRoLWJ1Z3MucHJhY3RpY2Vzb2Z0d2FyZXRlc3RpbmcuY29tL3VzZXJzL2xvZ2luIiwiaWF0IjoxNzU2MDg3NTUxLCJleHAiOjE3NzE2ODc1NTEsIm5iZiI6MTc1NjA4NzU1MSwianRpIjoiVDFJYzdVcFFQaUhKV24yZSIsInN1YiI6IjEiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3Iiwicm9sZSI6ImFkbWluIn0.fCHkTfWq02hd4eeD1WXO3KWAd6r3aiPg_Ny06M7k3y0",
+      "type": "string"
     }
   ],
   "item": [
@@ -56,7 +60,8 @@
         "method": "PUT",
         "header": [
           { "key": "Content-Type", "value": "application/json" },
-          { "key": "Accept", "value": "application/json" }
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{JWT_TOKEN}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/products/{{productId}}",
